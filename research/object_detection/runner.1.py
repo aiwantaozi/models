@@ -20,23 +20,20 @@ from utils import label_map_util
 
 from multiprocessing.dummy import Pool as ThreadPool
 
-from object_detection.core import box_list
-from object_detection.core import box_list_ops
-
 MAX_NUMBER_OF_BOXES = 10
 MINIMUM_CONFIDENCE = 0.9
 
-PATH_TO_LABELS = '/Users/fengcaixiao/Desktop/tempwork/src/github.com/tensorflow/train_result/0.33/label_map.pbtxt'
-PATH_TO_TEST_IMAGES_DIR = '/Users/fengcaixiao/Desktop/tempwork/src/github.com/tensorflow/train_result/0.33/test_images'
-
-PATH_TO_TEST_RESULT = '/Users/fengcaixiao/Desktop/tempwork/src/github.com/tensorflow/train_result/0.33/aftertest'
+PATH_TO_LABELS = '/tensorflow/training/label_map.pbtxt'
+PATH_TO_TEST_IMAGES_DIR = '/tensorflow/test_images'
+PATH_TO_TEST_RESULT = '/tensorflow/aftertest'
 
 label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
 categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=sys.maxsize, use_display_name=True)
 CATEGORY_INDEX = label_map_util.create_category_index(categories)
 
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
-PATH_TO_CKPT = '/Users/fengcaixiao/Desktop/tempwork/src/github.com/tensorflow/train_result/0.33/export/frozen_inference_graph.pb'
+MODEL_NAME = '/tensorflow/export'
+PATH_TO_CKPT = MODEL_NAME + '/frozen_inference_graph.pb'
 
 def load_image_into_numpy_array(image):
     (im_width, im_height) = image.size
@@ -50,26 +47,18 @@ def detect_objects(image_path):
     image_np_expanded = np.expand_dims(image_np, axis=0)
 
     (boxes, scores, classes, num) = sess.run([detection_boxes, detection_scores, detection_classes, num_detections], feed_dict={image_tensor: image_np_expanded})
+
+
     for c in range(0, len(classes)):
         for x in range(0, len(scores[c])):
-            class_name = CATEGORY_INDEX[classes[c][x]]
-            if scores[c][x] >= 0.5:      # only return confidences equal or greater than the threshold
+             class_name = CATEGORY_INDEX[classes[c][x]]
+             if scores[c][x] >= 0.5:      # only return confidences equal or greater than the threshold
                 ymin = boxes[c][x][0]*height
                 xmin = boxes[c][x][1]*width
                 ymax = boxes[c][x][2]*height
                 xmax = boxes[c][x][3]*width
                 print(" object %s class_name %s - score: %s, coordinates: %s, %s, %s, %s" % (image_path, str(class_name), scores[c][x], ymin, xmin, ymax, xmax))
-        # item = Object()
-        # item.name = 'Object'
-        # item.class_name = class_name
-        # item.score = float(scores[c])
-        # item.y = float(boxes[c][0])
-        # item.x = float(boxes[c][1])
-        # item.height = float(boxes[c][2])
-        # item.width = float(boxes[c][3])
- 
-        # output.append(item)
-    # print("detected %s objects in image above a %s score, %s" % (num, scores, boxes))
+
     vis_util.visualize_boxes_and_labels_on_image_array(
         image_np,
         np.squeeze(boxes),
@@ -87,7 +76,7 @@ def detect_objects(image_path):
 
     plt.imshow(image_np, aspect = 'auto')
 
-    plt.savefig(os.path.join(PATH_TO_TEST_RESULT, os.path.basename(image_path)), dpi = 72)
+    plt.savefig(os.path.join(PATH_TO_TEST_RESULT, os.path.basename(image_path)), dpi = 62)
     plt.close(fig)
 
 # TEST_IMAGE_PATHS = [ os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image-{}.jpg'.format(i)) for i in range(1, 4) ]
@@ -105,10 +94,6 @@ with detection_graph.as_default():
 
 print('detecting...')
 with detection_graph.as_default():
-    print('testing....')
-    for op in detection_graph.get_operations():
-        print str(op.name) 
-    print('testing....')
     with tf.Session(graph=detection_graph) as sess:
         image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
         detection_boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
